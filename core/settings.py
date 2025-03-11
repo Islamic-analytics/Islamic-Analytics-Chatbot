@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-topc@(mkl=1jr2u!f2=aexj5pg=ng9325==t09z_y4ka(n@rld
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = ['https://islamic-analytics-chatbot.onrender.com']
 
 
 # Application definition
