@@ -100,6 +100,37 @@
 
             {% block content %}{% endblock %}
 
+	<script>
+                function updateChatHistoryMenu() {
+                    fetch("/chatbot/fetch-chat-history/", {
+                        method: "GET",
+                        headers: { "Content-Type": "application/json" },
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("menu data: ", data);
+                        
+                        const menu = document.querySelector("#chat-history-menu");
+                        menu.innerHTML = "";  // Clear the current menu
+                        
+                        data.chat_history.forEach(chat => {
+                            const listItem = document.createElement("li");
+                            const link = document.createElement("a");
+                            link.href = `/chatbot/chat-detail/${chat.id}/`;  // Adjust to your actual detail view URL
+                            link.classList.add('sidebar-link');
+                            let truncatedPrompt = chat.prompt.length > 20 ? chat.prompt.slice(0, 20) + '...' : chat.prompt;
+                            link.textContent = truncatedPrompt;
+                            listItem.appendChild(link);
+                            menu.appendChild(listItem);
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Failed to update chat history menu:", error);
+                    });
+                }
+
+                updateChatHistoryMenu()
+            </script>
 
     </body>
 
