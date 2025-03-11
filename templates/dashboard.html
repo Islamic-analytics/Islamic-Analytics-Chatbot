@@ -66,6 +66,7 @@
         let copyIconUrl = "{% static 'img/copy-icon.png' %}";
         let pdfIconUrl = "{% static 'img/pdf-icon.png' %}";
         let wpIconUrl = "{% static 'img/wp-icon.png' %}";
+        let reviewIconUrl = "{% static 'img/review-icon.png' %}";
 
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.querySelector(".form");
@@ -204,6 +205,7 @@
                                     <button class="copy-btn"><img src="${copyIconUrl}" /></button>
                                     <button class="pdf-btn"><img src="${pdfIconUrl}" /></button>
                                     <button class="wp-share-btn"><img src="${wpIconUrl}" /></button>
+                                    <button class="review-btn"><img src="${reviewIconUrl}" /></button>
                                 </div>
                                 <div class="model-response-content">${cleanedResponse}</div>
                             </div>
@@ -441,6 +443,7 @@
                                     <button class="copy-btn"><img src="${copyIconUrl}" /></button>
                                     <button class="pdf-btn"><img src="${pdfIconUrl}" /></button>
                                     <button class="wp-share-btn"><img src="${wpIconUrl}" /></button>
+                                    <button class="review-btn"><img src="${reviewIconUrl}" /></button>
                                 </div>
                                 <div class="model-response-content">${cleanedSummary}</div>
                             </div>
@@ -598,35 +601,7 @@
         }
 
 
-        function updateChatHistoryMenu() {
-            fetch("/chatbot/fetch-chat-history/", {
-                method: "GET",
-                headers: { "Content-Type": "application/json" },
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("menu data: ", data);
-                
-                const menu = document.querySelector("#chat-history-menu");
-                menu.innerHTML = "";  // Clear the current menu
-                
-                data.chat_history.forEach(chat => {
-                    const listItem = document.createElement("li");
-                    const link = document.createElement("a");
-                    link.href = `/chatbot/chat-detail/${chat.id}/`;  // Adjust to your actual detail view URL
-                    link.classList.add('sidebar-link');
-                    let truncatedPrompt = chat.prompt.length > 20 ? chat.prompt.slice(0, 20) + '...' : chat.prompt;
-                    link.textContent = truncatedPrompt;
-                    listItem.appendChild(link);
-                    menu.appendChild(listItem);
-                });
-            })
-            .catch(error => {
-                console.error("Failed to update chat history menu:", error);
-            });
-        }
-
-        updateChatHistoryMenu()
+        
 
         $(document).ready(function() {
             $('#chat-models').multiselect({
@@ -730,12 +705,94 @@
 
 
 
-        
-
-
         }
 
         
+
+        document.body.addEventListener("click", function (event) {
+            if (event.target.closest(".review-btn")) {
+                const reviewButton = event.target.closest(".review-btn");
+                const container = reviewButton.closest(".model-response-container");
+
+                // Get Model Name
+                const modelName = container.querySelector(".response-model-desc").textContent;
+
+                openReviewPopup(modelName);
+            }
+        });
+
+        function openReviewPopup(modelName) {
+            // Remove existing popups & overlays
+            document.querySelectorAll(".review-popup, .review-overlay").forEach(el => el.remove());
+
+            // Create Overlay
+            const overlay = document.createElement("div");
+            overlay.classList.add("review-overlay");
+
+            // Create Popup
+            const popup = document.createElement("div");
+            popup.classList.add("review-popup");
+
+            popup.innerHTML = `
+                <div class="review-popup-content">
+                    <h3>Submit Review</h3>
+                    <textarea class="review-textarea" placeholder="Write your feedback..."></textarea>
+                    <input type="hidden" class="hidden-model-name" value="${modelName}">
+                    <button class="submit-review-btn">Submit</button>
+                    <button class="close-review-btn">Close</button>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+            document.body.appendChild(popup);
+
+            // Handle Close when clicking "Close" button
+            popup.querySelector(".close-review-btn").addEventListener("click", closeReviewPopup);
+
+            // Handle Close when clicking outside the popup (on overlay)
+            overlay.addEventListener("click", closeReviewPopup);
+
+            // Handle Submit
+            popup.querySelector(".submit-review-btn").addEventListener("click", async function () {
+                const reviewText = popup.querySelector(".review-textarea").value.trim();
+                const modelName = popup.querySelector(".hidden-model-name").value;
+
+                if (reviewText === "") {
+                    alert("Review cannot be empty!");
+                    return;
+                }
+
+                try {
+                    const response = await fetch("/chatbot/send-review/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+                        body: JSON.stringify({ model: modelName, review: reviewText })
+                    });
+
+                    console.log(response)
+
+                    if (response.ok) {
+                        alert("Review submitted successfully!");
+                        closeReviewPopup();
+                    } else {
+                        alert("Error submitting review.");
+                    }
+                } catch (error) {
+                    alert("Network error.");
+                }
+            });
+        }
+
+        // Function to Close Review Popup & Overlay
+        function closeReviewPopup() {
+            document.querySelectorAll(".review-popup, .review-overlay").forEach(el => el.remove());
+        }
+
+        // Function to Get CSRF Token
+        function getCSRFToken() {
+            return document.cookie.split("; ").find(row => row.startsWith("csrftoken="))?.split("=")[1];
+        }
+
 
 
 
