@@ -7,6 +7,8 @@ from django.views.decorators.csrf import csrf_exempt
 from openai import OpenAI, APIError, Timeout
 from .models import ChatHistory
 from django.contrib.auth.decorators import login_required
+from django.core.mail import send_mail
+from django.conf import settings
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -314,4 +316,33 @@ def fetch_chat_history(request):
         {"id": chat.id, "prompt": chat.prompt[:50]} for chat in chats
     ]
     return JsonResponse({"chat_history": chat_list})
-    
+
+
+
+def send_review(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            model_name = data.get("model", "Unknown Model")
+            review_text = data.get("review", "")
+
+            if not review_text.strip():
+                return JsonResponse({"error": "Review cannot be empty!"}, status=400)
+
+            subject = f"New Review for {model_name}"
+            email_body = f"A new review has been submitted for {model_name}:\n\nFeedback:\n{review_text}"
+
+            send_mail(
+                subject,
+                email_body,
+                settings.DEFAULT_FROM_EMAIL,  # Sender email from settings
+                ["analyticsislamic@gmail.com"],  # Replace with your recipient email
+                fail_silently=False,
+            )
+
+            return JsonResponse({"message": "Review submitted successfully!"})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
