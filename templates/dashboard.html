@@ -708,7 +708,7 @@
         }
 
         
-
+	console.log("Start popup JS");
         document.body.addEventListener("click", function (event) {
             if (event.target.closest(".review-btn")) {
                 const reviewButton = event.target.closest(".review-btn");
@@ -716,7 +716,7 @@
 
                 // Get Model Name
                 const modelName = container.querySelector(".response-model-desc").textContent;
-
+		console.log("Open popup");
                 openReviewPopup(modelName);
             }
         });
